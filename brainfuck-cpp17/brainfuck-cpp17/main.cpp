@@ -15,6 +15,7 @@
 #include <variant>
 #include <vector>
 
+#undef DEBUG
 #ifdef DEBUG
 #define printf(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( false )
 #else
