@@ -2,8 +2,8 @@
 //  main.cpp
 //  brainfuck
 //
-//  Created by BlueCocoa on 2019/8/12.
-//  Copyright © 2019 BlueCocoa. All rights reserved.
+//  Created by Ryza on 2019/8/12.
+//  Copyright © 2019 Ryza. All rights reserved.
 //
 
 #include <stdio.h>
@@ -14,13 +14,6 @@
 #include <stack>
 #include <variant>
 #include <vector>
-
-#undef DEBUG
-#ifdef DEBUG
-#define printf(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( false )
-#else
-#define printf(...) static_cast<void>(0)
-#endif
 
 /// brainfuck virtual machine tape length
 #define BRAINFUCK_VM_TAPE_LEN 30000
@@ -73,7 +66,7 @@ const std::map<char, brainfuck_op> bf_op_map {
 /// brainfuck virtual machine status
 struct brainfuck_vm_status {
     /// virtual infinity length tape
-    std::map<int, int> tape;
+    std::map<int, char> tape;
     /// current cell of the tape
     int tape_ptr = 0;
 
@@ -137,39 +130,34 @@ void run_vm(brainfuck_vm_status & status, char char_op, bool via_loop = false) {
     // parttern matching
     std::visit(brainfuck_vm {
         [&](increment_value_op) {
-            printf("increment_value_op\n");
             // skip actual action if we're skipping loop
             if (status.jump_loop == 0) {
                 status.tape[status.tape_ptr]++;
             }
         },
         [&](decrement_value_op) {
-            printf("decrement_value_op\n");
             // skip actual action if we're skipping loop
             if (status.jump_loop == 0) {
                 status.tape[status.tape_ptr]--;
             }
         },
         [&](increment_ptr_op) {
-            printf("increment_ptr_op\n");
             // skip actual action if we're skipping loop
             if (status.jump_loop == 0) {
                 status.tape_ptr++;
             }
         },
         [&](decrement_ptr_op) {
-            printf("decrement_ptr_op\n");
             // skip actual action if we're skipping loop
             if (status.jump_loop == 0) {
                 status.tape_ptr--;
             }
         },
         [&](print_op) {
-            printf("print_op\n");
             // skip actual action if we're skipping loop
             if (status.jump_loop == 0) {
-                putchar(status.tape[status.tape_ptr]);
-                printf("%c - %d\n", status.tape[status.tape_ptr], status.tape[status.tape_ptr]);
+                printf("%c", status.tape[status.tape_ptr]);
+                // printf("%c - %d\n", status.tape[status.tape_ptr], status.tape[status.tape_ptr]);
             }
         },
         [&](read_op) {
@@ -179,7 +167,6 @@ void run_vm(brainfuck_vm_status & status, char char_op, bool via_loop = false) {
             }
         },
         [&](loop_start_op) {
-            printf("loop from ins ptr: %d cond[%d]\n", status.instruction_ptr_current, status.tape[status.tape_ptr]);
             // if and only if 1) `current_cell_value != 0`
             //                2) and we're not do the skipping
             // we can record the starting index of the if instruction
@@ -193,7 +180,6 @@ void run_vm(brainfuck_vm_status & status, char char_op, bool via_loop = false) {
             }
         },
         [&](loop_end_op) {
-            printf("loop end ins ptr: %d cond[%d]\n", status.instruction_ptr_current, status.tape[status.tape_ptr]);
             // decrease the jump_loop value if we encounter the `]`
             // and we were previously doing the skip
             if (status.jump_loop != 0) {
@@ -203,17 +189,9 @@ void run_vm(brainfuck_vm_status & status, char char_op, bool via_loop = false) {
                 // then we need to check the loop condition, `current_cell_value != 0`
                 if (status.tape[status.tape_ptr] != 0) {
                     // the instruction range of current loop
-                    printf("loop [%d, %d]:\n", status.instruction_loop_ptr.top(), status.instruction_ptr_current);
-#ifdef DEBUG
-                    // dump all instructions inside the loop
-                    for (int debug = status.instruction_loop_ptr.top(); debug <= status.instruction_ptr_current; debug++) {
-                        putchar(status.instruction[debug]);
-                    }
-                    putchar('\n');
-#endif
-
                     // loop the instruction until condition satisfies no more
                     while (status.tape[status.tape_ptr] != 0) {
+                        // printf("while cond: %d\n", status.tape[status.tape_ptr]);
                         // save current instruction pointer
                         int current = status.instruction_ptr_current;
                         // start the loop right after the index of `[`
